@@ -1,0 +1,223 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offer Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Body */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f9fafc;
+            display: flex;
+            min-height: 100vh;
+            flex-direction: row;
+            color: #34495e;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h1 {
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin-bottom: 20px;
+        }
+
+        .sidebar ul li a {
+            color: #ecf0f1;
+            text-decoration: none;
+            font-size: 1.1rem;
+            padding: 10px;
+            display: block;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar ul li a.active,
+        .sidebar ul li a:hover {
+            background-color: #3498db;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 270px;
+            padding: 20px;
+            width: calc(100% - 270px);
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+
+        header h2 {
+            font-size: 1.8rem;
+            color: #34495e;
+        }
+
+        .admin-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .admin-info span {
+            margin-right: 15px;
+            font-size: 1rem;
+            color: #7f8c8d;
+        }
+
+        .logout-btn {
+            color: #e74c3c;
+            text-decoration: none;
+            font-size: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        table th, table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 0.95rem;
+        }
+
+        table th {
+            background-color: #f4f7fc;
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        table tr:hover td {
+            background-color: #f8f9fd;
+        }
+
+        button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        a button {
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1>Admin Customers</h1>
+        <ul>
+            <li><a href="/admin/dashboard">Dashboard</a></li>
+            <li><a href="/admin/customers">Customers</a></li>
+            <li><a href="/admin/product">Products</a></li>
+            <li><a href="/admin/categories">Categories</a></li>
+            <li><a href="/admin/order">Orders</a></li>
+            <li><a href="/admin/coupon">Coupons</a></li>
+            <li><a href="/admin/sales-report">Sales</a></li>
+            <li><a href="/admin/offer" class="active">Offers</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header>
+            <h2>Offers</h2>
+            <div class="admin-info">
+                <span>Admin</span>
+                <a href="/admin/login" class="logout-btn">Logout</a>
+            </div>
+        </header>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Discount Type</th>
+                    <th>Discount Value</th>
+                    <th>Products</th>
+                    <th>Expiry Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% offers.forEach(offer => { %>
+                <tr>
+                    <td><%= offer.category %></td>
+                    <td><%= offer.discountType %></td>
+                    <td><%= offer.discountValue %></td>
+                    <td>
+                        <% offer.applicableProducts.forEach(product => { %>
+                            <div><%= product.name %></div>
+                        <% }) %>
+                    </td>
+                    <td><%= new Date(offer.expiryDate).toLocaleDateString() %></td>
+                   <td>
+                    <a href="/admin/update-offer/<%= offer._id %>">
+                        <button>Update</button>
+                    </a>
+                    <form action="/admin/delete-offer/<%= offer._id %>" method="POST" style="display:inline">
+                        <button type="submit">Delete</button>
+                    </form>
+                   </td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table>
+        
+        <a href="/admin/add-offer">
+            <button>Add New Offer</button>
+        </a>
+    </div>
+</body>
+</html>

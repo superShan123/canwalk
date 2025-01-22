@@ -1,0 +1,210 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Category</title>
+    <link rel="stylesheet" href="/css/admineditcategories.css"> <!-- Link to your stylesheet -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+
+</head>
+<body>
+
+<div class="main-content">
+    <!-- Header -->
+    <header>
+        <div class="admin-info">
+            <span>Admin</span>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </header>
+    <h2>Edit Product</h2>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="error-message">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <form id="productForm" action="/admin/product/edit/<%= product._id %>" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="productName">Product Name:</label>
+                <input 
+                    type="text" 
+                    id="productName" 
+                    name="name" 
+                    value="<%= product.name %>" 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="productQuantity">Product Quantity:</label>
+                <input
+                type="number"
+                id="productQuantity"
+                name="quantity"
+                value="<%= product.quantity %>"
+                required
+                >
+
+            </div>
+
+            <div class="form-group">
+                <label for="productPrice">Product Price:</label>
+                <input 
+                    type="number" 
+                    id="productPrice" 
+                    name="price" 
+                    value="<%= product.price %>" 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="productColor">Product Color:</label>
+                <input 
+                    type="text" 
+                    id="productColor" 
+                    name="color" 
+                    value="<%= product.color %>" 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="productSize">Product Size:</label>
+                <input 
+                    type="text" 
+                    id="productSize" 
+                    name="size" 
+                    value="<%= product.size %>" 
+                    required
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="productDiscount">Product Discount:</label>
+                <input 
+                    type="text" 
+                    id="productDiscount" 
+                    name="discount" 
+                    value="<%= product.discount %>" 
+                    required
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="productHighlights">Product Highlights:</label>
+                <input
+                type="text"
+                id="productHighlights"
+                name="highlights"
+                value="<%= product.highlights %>"
+                required
+                >
+
+            </div>
+
+            <div class="form-group">
+                <label for="productCategory">Product Category:</label>
+                <select id="productCategory" name="category" required>
+                    <% categories.forEach(category=>{ %>
+                        <option value="<%= category._id %>" <%= product.category && product.category._id === category._id ?'selected' : '' %>>
+                            <%= category.name %>
+                        </option>
+                        <%})%>
+                </select>
+           
+            <!-- Display current images -->
+            <div class="form-group">
+                <label>Current Product Images:</label>
+                <div id="currentImages">
+                    <% product.images.forEach(function(image) { %>
+                        <img src="<%= image %>" height="100">
+                    <% }); %>
+                </div>
+            </div>
+
+            <!-- Image upload and crop section -->
+            <div class="form-group">
+                <label for="productImages">Upload New Product Images:</label>
+                <input type="file" id="productImages" name="images" multiple>
+            </div>
+
+            <!-- Cropper area (initially hidden) -->
+            <div id="cropperContainer" style="display: none;">
+                <img id="imageToCrop" style="max-width: 100%; max-height: 400px;">
+                <button type="button" id="cropImageButton">Crop Image</button>
+            </div>
+
+            <!-- Hidden input to store cropped image data -->
+            <input type="hidden" id="croppedImageData" name="croppedImageData">
+
+            <div class="form-group">
+                <label for="productStatus">Product Status:</label>
+                <select id="productStatus" name="status">
+                    <option value="active" <%= product.status === 'active' ? 'selected' : '' %>>Active</option>
+                    <option value="inactive" <%= product.status === 'inactive' ? 'selected' : '' %>>Inactive</option>
+                </select>
+            </div>
+
+            <button type="submit">Update Product</button>
+        </form>
+
+        <!-- Preview of cropped image -->
+        <div id="preview"></div>
+    </div>
+
+    <!-- Include Cropper.js and JavaScript code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+
+    <script>
+        let cropper;
+
+        document.getElementById('productImages').addEventListener('change', function (e) {
+            const file = e.target.files[0]; // Handle the first selected image for cropping
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    // Display image for cropping
+                    document.getElementById('imageToCrop').src = e.target.result;
+                    document.getElementById('cropperContainer').style.display = 'block';
+
+                    // Initialize Cropper.js
+                    if (cropper) cropper.destroy(); // Destroy the previous cropper if it exists
+                    const image = document.getElementById('imageToCrop');
+                    cropper = new Cropper(image, {
+                        aspectRatio: 1, // Aspect ratio for cropping (e.g., 1 for square)
+                        viewMode: 2,
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('cropImageButton').addEventListener('click', function () {
+            const canvas = cropper.getCroppedCanvas();
+            const croppedImageData = canvas.toDataURL('image/jpeg');
+
+            // Set cropped image data in hidden input field
+            document.getElementById('croppedImageData').value = croppedImageData;
+
+            // Display cropped image preview
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = croppedImageData;
+            img.height = 100;
+            preview.appendChild(img);
+
+            // Hide the cropper after cropping
+            document.getElementById('cropperContainer').style.display = 'none';
+        });
+    </script>
+</body>
+</html>

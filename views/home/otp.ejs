@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f7f7f7;
+        }
+
+        .otp-container {
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            width: 300px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #218838;
+        }
+
+        .btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .error {
+            color: red;
+            margin-bottom: 10px;
+        }
+
+        .success {
+            color: green; 
+            margin-bottom: 10px; /* Changed from error to success class */
+        }
+
+        .timer {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .resend-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .resend-link:hover {
+            text-decoration: underline;
+        }
+
+        .resend-link:disabled {
+            color: gray;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="otp-container">
+        <h2>OTP Verification</h2>
+        
+        <% if (locals.errors) { %>
+            <div class="error">
+                <% errors.forEach(function(error) { %>
+                    <p><%= error %></p>
+                <% }) %>
+            </div>
+        <% } %>
+
+        <% if (locals.success) { %>
+            <div class="success"><%= success %></div> <!-- Changed class to 'success' -->
+        <% } %>
+
+        <form id="otpForm" action="/verify-otp" method="POST">
+            <input type="text" id="otpInput" name="otp" placeholder="Enter OTP" required>
+            <button type="submit" id="verifyBtn" class="btn">Verify OTP</button>
+        </form>
+
+        <div class="timer" id="timer">Time remaining: 02:00</div>
+
+        <a href="/resend-otp" id="resendLink" class="resend-link" style="pointer-events: none; color: gray;">Resend OTP</a>
+    </div>
+
+    <script>
+        // Set countdown timer to 2 minutes (120 seconds)
+        let countdown = 120;
+        const timerElement = document.getElementById('timer');
+        const otpInput = document.getElementById('otpInput');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const resendLink = document.getElementById('resendLink');
+
+        // Function to format time (mm:ss)
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Countdown function
+        const timer = setInterval(() => {
+            countdown--;
+
+            // Update the timer display
+            timerElement.textContent = `Time remaining: ${formatTime(countdown)}`;
+
+            // When countdown reaches zero, disable form and enable Resend OTP
+            if (countdown <= 0) {
+                clearInterval(timer);
+                otpInput.disabled = true;
+                verifyBtn.disabled = true;
+                resendLink.style.pointerEvents = "auto"; // Enable the resend link
+                resendLink.style.color = "#007bff"; // Change link color
+                timerElement.textContent = "OTP expired. Please resend OTP.";
+            }
+        }, 1000);  // Run every second
+    </script>
+</body>
+</html>

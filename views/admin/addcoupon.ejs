@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Coupon Management</title>
+    <link rel="stylesheet" href="/css/admincoupon.css">
+</head>
+<body>
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h1>Admin Panel</h1>
+            <ul>
+                <li><a href="/admin/dashboard">Dashboard</a></li>
+                <li><a href="/admin/customers">Customers</a></li>
+                <li><a href="/admin/product">Products</a></li>
+                <li><a href="/admin/categories">Categories</a></li>
+                <li><a href="/admin/order">Orders</a></li>
+                <li><a href="/admin/coupon" class="active">Coupons</a></li>
+                <li><a href="/admin/discounts">Discounts</a></li>
+                <li><a href="/admin/settings">Settings</a></li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            <div class="container">
+                <h1>Coupon Management</h1>
+
+                <form action="/admin/coupon-add" method="POST">
+                    <h2>Add Coupon</h2>
+                    
+                    <label for="code">Code</label>
+                    <input type="text" name="code" id="code" required>
+
+                    <label for="discountType">Discount Type</label>
+                    <select name="discountType" id="discountType" required>
+                        <option value="percentage">Percentage</option>
+                        <option value="flat">Flat</option>
+                    </select>
+
+                    <label for="discount">Discount</label>
+                    <input type="number" name="discount" id="discount" required>
+
+                    <label for="minAmount">Minimum Amount</label>
+                    <input type="number" name="minAmount" id="minAmount" required>
+
+                    <label for="maxAmount">Maximum Amount</label>
+                    <input type="number" name="maxAmount" id="maxAmount" required>
+
+                    <label for="userLimit">User Limit</label>
+                    <input type="number" name="userLimit" id="userLimit" required>
+
+                    <label for="expiryDate">Expiry Date</label>
+                    <input type="date" name="expiryDate" id="expiryDate" required>
+
+                    <label for="description">Description</label>
+                    <input type="text" id="description" name="description">
+
+                    <button type="submit" class="btn">Add Coupon</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
