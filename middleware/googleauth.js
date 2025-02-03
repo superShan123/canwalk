@@ -40,6 +40,8 @@ const initializePassport = () => {
                 }
             }
         )
+
+
     );
     
 
@@ -49,12 +51,15 @@ const initializePassport = () => {
 
     passport.deserializeUser(async (id, done) => {
         try {
+            console.log("Deserializing user with ID:", id);
             const user = await User.findById(id);
             done(null, user);
         } catch (err) {
+            console.error("Error during deserialization:", err.message || err);
             done(err, null);
         }
     });
 };
+
 
 module.exports = initializePassport;

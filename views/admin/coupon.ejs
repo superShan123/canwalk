@@ -75,35 +75,65 @@
             height: 100vh;
             overflow-y: auto;
         }
+    
+table {
+    width: 90%; 
+    min-width: 1200px; 
+    max-width: 1600px; /* Increased maximum width */
+    margin: 20px auto; /* Centers the table with some vertical spacing */
+    border-collapse: collapse;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}             
 
-        /* Table Container */
-        table {
-            margin: 20px auto;
-            margin-left: 200px; /* Increased margin-left to move it further to the right */
-            width: calc(100% - 500px); /* Increased width for a more prominent table */
-            max-width: 1200px; /* Prevents table from being too wide */
-            border-collapse: collapse;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
+/* Table headers and cells */
+table th, table td {
+    padding: 10px 5px; /* Increased horizontal padding */
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 0.95rem;
+    white-space: nowrap; /* Prevents text wrapping */
+}
 
-        table thead tr {
-            background-color: #34495e;
-            color: #ecf0f1;
-        }
+/* Column widths */
+table th:nth-child(1), table td:nth-child(1) {
+    width: 15%; /* Code column */
+    min-width: 150px;
+}
 
-        table thead th, table tbody td {
-            padding: 15px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
+table th:nth-child(2), table td:nth-child(2) {
+    width: 15%; /* Discount column */
+    min-width: 120px;
+}
 
-        table tbody tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
+table th:nth-child(3), table td:nth-child(3) {
+    width: 15%; /* Min Amount column */
+    min-width: 130px;
+}
 
-        table tbody tr:hover {
-            background-color: #f7f7f7;
-        }
+table th:nth-child(4), table td:nth-child(4) {
+    width: 15%; /* Max Amount column */
+    min-width: 130px;
+}
+
+table th:nth-child(5), table td:nth-child(5) {
+    width: 15%; /* User Limit column */
+    min-width: 120px;
+}
+
+table th:nth-child(6), table td:nth-child(6) {
+    width: 15%; /* Expiry Date column */
+    min-width: 130px;
+}
+
+table th:nth-child(7), table td:nth-child(7) {
+    width: 10%; /* Actions column */
+    min-width: 100px;
+}
+
 
         select {
             padding: 5px;
@@ -167,25 +197,69 @@
     display: none;
 }
 
+
 .add-coupon-btn {
-    display: block; /* Makes the button take a new line */
-    margin-top: 450px; /* Centers it horizontally and moves it down */
-    margin-left:auto;
-    margin-right:350px;
-    padding: 10px 20px; /* Adjusts padding for better look */
-    background-color: #3498db; /* Blue background */
-    color: #fff; /* White text */
-    font-size: 12px; /* Makes the font larger */
-    border: none; /* Removes the border */
-    border-radius: 5px; /* Gives rounded corners */
-    cursor: pointer; /* Changes cursor to pointer on hover */
-    text-align: center; /* Aligns the text in the button */
-    transition: background-color 0.3s ease; /* Adds a hover effect */
+    display: block;
+    margin-top: 450px;
+    position: relative;
+    left: -700px; /* Moves the button further left */
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: #fff;
+    font-size: 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.3s ease;
 }
+
+
 
 .add-coupon-btn:hover {
     background-color: #2980b9; /* Darker blue on hover */
 }
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+/* Pagination buttons */
+.pagination-btn {
+    margin: 0 5px;
+    padding: 8px 16px;
+    background-color: #f0f0f0;
+    color: #333;
+    text-decoration: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+/* Pagination button on hover */
+.pagination-btn:hover {
+    background-color: #ddd;
+}
+
+/* Active page style */
+.pagination-btn.active {
+    background-color: #333;
+    color: #fff;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+/* Disabled button style (previous/next if at boundary) */
+.pagination-btn.disabled {
+    background-color: #f5f5f5;
+    color: #ccc;
+    pointer-events: none;
+}
+
 
 </style>
 <body>
@@ -212,7 +286,6 @@
                     <tr>
                         <th>Code</th>
                         <th>Discount</th>
-                        <th>Type</th>
                         <th>Min Amount</th>
                         <th>Max Amount</th>
                         <th>User Limit</th>
@@ -226,7 +299,6 @@
                         <tr>
                             <td><%= coupon.code %></td>
                             <td><%= coupon.discount %></td>
-                            <td><%= coupon.discountType %></td>
                             <td><%= coupon.minAmount %></td>
                             <td><%= coupon.maxAmount %></td>
                             <td><%= coupon.userLimit %></td>
@@ -242,11 +314,35 @@
                     <% } %>
                 </tbody>
             </table>
+
+            <div class="pagination">
+                <% if (currentPage > 1) { %>
+                    <a href="/admin/coupon?page=<%= currentPage - 1 %>&limit=<%= limit %>" class="pagination-btn">Previous</a>
+                <% } else { %>
+                    <a class="pagination-btn disabled" style="pointer-events: none;">Previous</a>
+                <% } %>
+            
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <a href="/admin/coupon?page=<%= i %>&limit=<%= limit %>" 
+                       class="pagination-btn <%= currentPage === i ? 'active' : '' %>">
+                       <%= i %>
+                    </a>
+                <% } %>
+            
+                <% if (currentPage < totalPages) { %>
+                    <a href="/admin/coupon?page=<%= currentPage + 1 %>&limit=<%= limit %>" class="pagination-btn">Next</a>
+                <% } else { %>
+                    <a class="pagination-btn disabled" style="pointer-events: none;">Next</a>
+                <% } %>
+            </div>
+
         </div>
     </div>
     
     <a href='/admin/coupon-add'>
         <button class="add-coupon-btn">Add Coupon</button>
     </a>
+
+    
    
 </html>

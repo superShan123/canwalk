@@ -4,10 +4,12 @@ const User = require('../models/user/user');
 const isAuthenticated = async (req, res, next) => {
     // Check if the user is logged in
     if (!req.session.userId) {
+        console.log('inside checking session')
         return res.redirect('/login'); // User is not authenticated, redirect to login
     }
     
     try {
+        console.log('inside try')
         const user = await User.findById(req.session.userId);
         
         // Check if the user exists

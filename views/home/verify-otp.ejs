@@ -94,6 +94,13 @@ body, html {
     text-decoration: underline;
 }
 
+.error-message{
+    margin-bottom: 1rem;
+    color: #d32f2f;
+    font-size: 0.9rem;
+    font-weight: bold 
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 400px) {
     .otp-container {
@@ -103,9 +110,15 @@ body, html {
 
 
     </style>
+
     <div class="otp-container">
         <div class="otp-box">
             <h2>OTP Verification</h2>
+            <% if(locals.error!== null && typeof locals.error !== 'undefined'){ %> 
+                <div class="error-message" style="color: red; font-size: 0.9rem; margin-bottom: 1rem;">
+                    <%=error%>
+                </div>
+                <% } %>
             <form action="/otp-verify" method="POST">
                 <div class="input-group">
                     <input type="text" name="otp" required placeholder="Enter the OTP">

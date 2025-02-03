@@ -52,7 +52,8 @@ const orderSchema = new mongoose.Schema({
         reason: { type: String },
         productQuality: { type: String },
         serviceRating: { type: Number },
-        additionalFeedback: { type: String }
+        additionalFeedback: { type: String },
+        orderRating: {type:Number}
     },
     orderSummary: {
         subtotal: { type: Number, required: true },

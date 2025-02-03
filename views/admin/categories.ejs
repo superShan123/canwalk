@@ -38,10 +38,45 @@
             <%= message %>
         </div>
     <% } %>
+
     
 
+    <!-- Categories Table and Pagination Container -->
+    <div class="categories-container">
+        <!-- Categories Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Sl No</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% categories.forEach((category, index) => { %>
+                    <tr>
+                        <td><%= index + 1 %></td>
+                        <td><%= category.name %></td>
+                        <td><%= category.status %></td>
+                        <td>
+                            <form action="/admin/toggle-status-category/<%= category._id %>" method="POST">
+                                <input type="hidden" name="status" value="<%= category.status === 'active' ? 'inactive' : 'active' %>">
+                                <button type="submit">
+                                    <%= category.status === 'active' ? 'Block' : 'Unblock' %>
+                                </button>
+                            </form>
+                            <form action="/admin/categories/edit/<%= category._id %>" method="GET">
+                                <button type="submit">Edit</button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
 
-    <!-- Add Category Form -->
+
+        <!-- Add Category Form -->
     <div class="form-container">
         <form id="addCategoryForm" action="/admin/categories/add" method="POST">
             <div class="form-group">
@@ -52,71 +87,62 @@
         </form>
     </div>
 
-    <!-- Categories Table -->
-    <table>
-        <thead>
-            <tr>
-                <th>Sl No</th>
-                <th>Category</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% categories.forEach((category, index) => { %>
-                <tr>
-                    <td><%= index + 1 %></td>
-                    <td><%= category.name %></td>
-                    <td><%= category.status %></td>
-                    <td>
-                        <form action="/admin/toggle-status-category/<%= category._id %>" method="POST">
-                            <input type="hidden" name="status" value="<%= category.status === 'active' ? 'inactive' : 'active' %>">
-                            <button type="submit">
-                                <%= category.status === 'active' ? 'Block' : 'Unblock' %>
-                            </button>
-                        </form>
-                        <form action="/admin/categories/edit/<%= category._id %>" method="GET">
-                            <button type="submit">Edit</button>
-                        </form>
-                    </td>
-                </tr>
-            <% }) %>
-        </tbody>
-    </table>
-
-    <script>
-        // Validate Add Category Form before form submission
-        document.getElementById("addCategoryForm").addEventListener("submit", function(event) {
-            const categoryName = document.getElementById("categoryName").value;
-
-            // Check if the category name starts with a number
-            if (/^[0-9]/.test(categoryName)) {
-                alert("Category name cannot start with a number.");
-                event.preventDefault();  // Prevent form submission
-                return false;
-            }
-
-            // Check if the first letter is capitalized
-            if (categoryName.charAt(0) !== categoryName.charAt(0).toUpperCase()) {
-                alert("Category name must start with a capital letter.");
-                event.preventDefault();  // Prevent form submission
-                return false;
-            }
-
-            return true;  // Allow form submission if validation passes
-        });
-
-        // Wait for the DOM to fully load before hiding the message
-        window.addEventListener('DOMContentLoaded', (event) => {
-            // Make the message disappear after 500 milliseconds (half a second)
-            if (document.getElementById("message")) {
-                setTimeout(function () {
-                    document.getElementById("message").style.display = 'none';
-                }, 500); // Hide after 500 milliseconds
-            }
-        });
-    </script>
+        <!-- Pagination -->
+        <div class="pagination">
+            <% if (currentPage > 1) { %>
+                <a href="/admin/categories=<%= currentPage - 1 %>&limit=<%= limit %>" class="pagination-btn">Previous</a>
+            <% } else { %>
+                <a class="pagination-btn disabled" style="pointer-events: none;">Previous</a>
+            <% } %>
+        
+            <% for (let i = 1; i <= totalPages; i++) { %>
+                <a href="/admin/categories?page=<%= i %>&limit=<%= limit %>" 
+                   class="pagination-btn <%= currentPage === i ? 'active' : '' %>">
+                   <%= i %>
+                </a>
+            <% } %>
+        
+            <% if (currentPage < totalPages) { %>
+                <a href="/admin/order?page=<%= currentPage + 1 %>&limit=<%= limit %>" class="pagination-btn">Next</a>
+            <% } else { %>
+                <a class="pagination-btn disabled" style="pointer-events: none;">Next</a>
+            <% } %>
+        </div>
+    </div>
 </div>
+
+<script>
+    // Validate Add Category Form before form submission
+    document.getElementById("addCategoryForm").addEventListener("submit", function(event) {
+        const categoryName = document.getElementById("categoryName").value;
+
+        // Check if the category name starts with a number
+        if (/^[0-9]/.test(categoryName)) {
+            alert("Category name cannot start with a number.");
+            event.preventDefault();  // Prevent form submission
+            return false;
+        }
+
+        // Check if the first letter is capitalized
+        if (categoryName.charAt(0) !== categoryName.charAt(0).toUpperCase()) {
+            alert("Category name must start with a capital letter.");
+            event.preventDefault();  // Prevent form submission
+            return false;
+        }
+
+        return true;  // Allow form submission if validation passes
+    });
+
+    // Wait for the DOM to fully load before hiding the message
+    window.addEventListener('DOMContentLoaded', (event) => {
+        // Make the message disappear after 500 milliseconds (half a second)
+        if (document.getElementById("message")) {
+            setTimeout(function () {
+                document.getElementById("message").style.display = 'none';
+            }, 500); // Hide after 500 milliseconds
+        }
+    });
+</script>
 
 </body>
 </html>

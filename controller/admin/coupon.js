@@ -34,8 +34,21 @@ const addCoupon = async (req,res)=>{
 
 const getCoupon = async (req,res)=>{
 try{
-    const coupons = await Coupon.find()
-    res.render('admin/coupon',{coupons})
+  const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 5;
+        const skip = (page-1)*limit;
+
+    const coupons = await Coupon.find().skip(skip).limit(limit);
+
+    const totalCoupons = await Coupon.countDocuments() ;
+        const totalPages = Math.ceil(totalCoupons/ limit);
+
+    res.render('admin/coupon',{coupons,
+      currentPage: page,
+      totalPages: totalPages,
+      totalCoupons: totalCoupons,
+      limit: limit,
+    })
 }catch(err){
     console.error('Error fetching the coupon',err)
     res.status(500).send('Internal server error')
@@ -161,7 +174,7 @@ const applyCoupon = async (req, res) => {
   
       
   
-      const shippingCharges = 50; 
+      const shippingCharges = 40; 
       const tax = subtotal * 0.1;
       console.log('Discount amount:', discount, subtotal, shippingCharges, tax);
       req.session.orderSummary = {

@@ -96,10 +96,19 @@
     <form id="offerForm" action="/admin/update-offer/<%= offer._id %>" method="POST">
         <div class="form-group">
             <label>Category</label>
-            <input type="text" id="category" name="category" value="<%= offer.category %>" required>
+            <select id="category" name="category" required>
+                <option value="" disabled>Select a Category</option>
+                <% categories.forEach(category => { %>
+                    <option value="<%= category._id %>"
+                        <%= category._id.toString() === offer.category._id.toString() ? 'selected' : '' %>>
+                        <%= category.name %>
+                    </option>
+                <% }) %>
+            </select>
             <div id="categoryError" style="color: red;"></div>
         </div>
         
+
         <div>
             <label>Discount Type</label>
             <select id="discountType" name="discountType" required>
@@ -120,19 +129,7 @@
             <div id="expiryDateError" style="color: red;"></div>
         </div>
         
-        <div class="form-group">
-            <label>Applicable Products:</label>
-            <select id="applicableProducts" name="applicableProducts" multiple required>
-                <% products.forEach(product => { %>
-                    <option 
-                        value="<%= product._id %>" 
-                        <%= offer.applicableProducts && offer.applicableProducts.some(p => p._id.equals(product._id)) ? 'selected' : '' %>>
-                        <%= product.name %>
-                    </option>
-                <% }) %>
-            </select>
-            <div id="applicableProductsError" style="color: red;"></div>
-        </div>
+        
         
         <button type="submit">Update Offer</button>
     </form>
@@ -141,24 +138,18 @@
         document.getElementById("offerForm").addEventListener("submit", function (event) {
             let valid = true;
 
-            // Validate Category
-            const category = document.getElementById("category").value.trim();
-            const categoryRegex = /^[A-Z][a-zA-Z0-9]*$/;
-            if (!categoryRegex.test(category)) {
-                valid = false;
-                document.getElementById("categoryError").textContent = 
-                    "Category must start with a capital letter and contain no spaces.";
-            } else {
-                document.getElementById("categoryError").textContent = "";
-            }
-
             // Validate Discount Type and Value
             const discountType = document.getElementById("discountType").value;
             const discountValue = parseFloat(document.getElementById("discountValue").value);
             const maxPercentage = 100;
             const maxFixedAmount = 10000; // Example max fixed discount
 
-            if (isNaN(discountValue) || discountValue <= 0) {
+            // Prevent Negative Discount Value
+            if (discountValue < 0) {
+                valid = false;
+                document.getElementById("discountValueError").textContent = "Discount value cannot be negative.";
+            }
+            else if (isNaN(discountValue) || discountValue <= 0) {
                 valid = false;
                 document.getElementById("discountValueError").textContent =
                     "Discount value must be a positive number.";
@@ -182,16 +173,6 @@
                     "Expiry date must be in the future.";
             } else {
                 document.getElementById("expiryDateError").textContent = "";
-            }
-
-            // Validate Applicable Products
-            const applicableProducts = document.getElementById("applicableProducts").selectedOptions;
-            if (applicableProducts.length === 0) {
-                valid = false;
-                document.getElementById("applicableProductsError").textContent =
-                    "Please select at least one product.";
-            } else {
-                document.getElementById("applicableProductsError").textContent = "";
             }
 
             // Prevent form submission if validation fails

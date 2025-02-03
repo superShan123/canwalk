@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Wishlist</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Add SweetAlert CDN -->
     <style>
         /* Basic Styles for Wishlist Page */
         body {
@@ -13,14 +14,12 @@
             background-color: #f9f9f9;
         }
 
-
-.size{
-    text-align: left;
-    font-size: 25px;
-    margin-left:10px;
-    margin-top:10px;
-
-}
+        .size{
+            text-align: left;
+            font-size: 25px;
+            margin-left:10px;
+            margin-top:10px;
+        }
 
         .wishlist-products {
             display: flex;
@@ -97,7 +96,11 @@
                     <img src="<%= product.images[0] %>" alt="<%= product.name %>">
                     <h3><%= product.name %></h3>
                     <p>₹<%= product.price %></p>
-                    <a href="/product/details/<%= product._id %>">View Product</a>
+                    <button onclick="addToCart('<%= product._id %>')" 
+                        style="padding: 10px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">
+                        Add to Cart
+                    </button>
+                    
                     <form id="remove-form-<%= product._id %>" style="margin-top:10px;"> 
                         <button type="button" onclick="removeProduct('<%= product._id %>')" 
                             style="padding : 5px 10px; background-color: red; color: white; border:none; border-radius:5px; cursor:pointer;">Remove</button>
@@ -111,32 +114,69 @@
     </div>
 
     <script>
-        const removeProduct = async (productId)=>{
-            try{
-                const response = await fetch(`/wishlist/remove/${productId}`,{
-        
-
-                    method:'DELETE',
-                    headers:{
-                        'Content-Type':'application/json',
-
+        const removeProduct = async (productId) => {
+            try {
+                const response = await fetch(`/wishlist/remove/${productId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
                     }
                 });
 
-                if(response.ok){
-                    alert('Product removed succesfully')
-                    location.reload()
-                }else{
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Product Removed',
+                        text: 'Product removed successfully!',
+                    });
+                    location.reload();
+                } else {
                     const error = await response.json();
-                    alert(`Error:${error.message}`)
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: `Error: ${error.message}`,
+                    });
                 }
-            }catch(err){
-                console.error('Error',err)
-                alert('An error occured while removing the product')
+            } catch (err) {
+                console.error('Error', err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An error occurred while removing the product.',
+                });
             }
+        };
 
-            
-        }
+        const addToCart = async (productId) => {
+            try {
+                const response = await fetch('/add-to-cart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ productId })
+                });
+
+                if (response.ok) {
+                    window.location.href = '/cart';
+                } else {
+                    const error = await response.json();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: `Error: ${error.message}`,
+                    });
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An error occurred while adding to cart.',
+                });
+            }
+        };
     </script>
 
 </body>

@@ -5,13 +5,24 @@ const mongoose = require('mongoose')
 // Get Admin Categories (With Edit functionality)
 const getAdminCategory = async (req, res) => {
     try {
-        const categories = await Category.find();  // Get all categories
+
+        const page = parseInt(req.query.page) || 1;
+
+        const limit = parseInt (req.query.limit) || 4;
+
+        const skip = (page-1)*limit;
+        
+        const categories = await Category.find().skip(skip).limit(limit)
+
+        const totalCategories = await Category.countDocuments();
+        const totalPages = Math.ceil(totalCategories / page);
+
         const editCategory = null;
         const message = req.query.message || '' 
         const messageType = req.query.messageType || 'success';
 
-        res.render('admin/categories', { categories, editCategory, message, messageType });  // Pass both categories and editCategory to the view
-    } catch (err) {
+        res.render('admin/categories', { categories, editCategory, message, messageType,currentPage:page, totalPages:totalPages,totalCategories: totalCategories,limit:limit  });  // Pass both categories and editCategory to the view
+    } catch (err) { 
         console.error("Error fetching categories:", err);
         res.render('admin/categories', {
             categories: [],
@@ -94,6 +105,7 @@ const postEditCategory = async (req, res) => {
 };
 
 // Block Category
+
 const blockCategory = async (req, res) => {
     try {
         const categoryId = req.params.id;

@@ -28,6 +28,9 @@ router.get('/login', userController.getLogin)
 router.post('/login',userController.postLogin)
 
 
+router.get('/logout',isAuthenticated,userController.getLogout)
+
+
 // OTP Routes
 router.post("/verify-otp", otpController.verifyOtp);    // OTP verification
 router.get("/resend-otp", otpController.resendOtp);     // Resend OTP
@@ -163,8 +166,16 @@ router.post('/payment/failure',orderController.handlePaymentFailure)
 
 router.post('/checkout/retry',orderController.retryPayment)
 
-router.post('/update-status',orderController.retryStatus)
+router.post('/update-status',orderController.retryStatus);
 
+router.post('/confirm-checkout',cartController.confirmCheckout);
+
+
+router.post('/submit-rating',userController.submitRating)
+
+router.get('/password',isAuthenticated,profileController.getPassword)
+
+router.post('/password', walletController.changePassword)
 
 module.exports = router;       
 

@@ -135,7 +135,6 @@ const getEditProduct = async (req, res) => {
 
 
 
-// Handle product editing
 const postEditProduct = (req, res) => {
     upload.array('images')(req, res, async (err) => {
         if (err) {
@@ -143,11 +142,11 @@ const postEditProduct = (req, res) => {
         }
 
         try {
-            const { name, price, category, quantity,color, discount,size, highlights} = req.body;
+            const { name, price, category, quantity, color, discount, size, highlights } = req.body;
             const productId = req.params.id;
 
-            if (!name || !price || !category || !quantity|| !discount) {
-                return res.status(400).json({ error: 'Name price category are required' });
+            if (!name || !price || !category || !quantity || !discount) {
+                return res.status(400).json({ error: 'Name, price, category, quantity, and discount are required' });
             }
 
             const product = await Product.findById(productId);
@@ -155,32 +154,43 @@ const postEditProduct = (req, res) => {
                 return res.status(404).json({ error: 'Product not found' });
             }
 
+            // Validate and assign category
+            const categoryExists = await Category.findById(category);
+            if (!categoryExists) {
+                return res.status(400).json({ error: 'Invalid category' });
+            }
+            product.category = categoryExists._id; // Ensure the category ID is valid
+
+            // Update basic product details
             product.name = name;
             product.price = price;
-            product.category= category;
             product.quantity = quantity;
             product.color = color;
             product.highlights = highlights;
-            product.discount = discount
+            product.discount = discount;
 
-
+            // Handle sizes: parse the sizes from the request
             let parsedSizes = Array.isArray(size)
                 ? size.map(s => Number(s))
                 : size.split(',').map(s => Number(s.trim()));
 
+            // Validate size input
             if (parsedSizes.some(isNaN)) {
                 return res.status(400).json({ error: 'Invalid size format. Sizes must be numbers.' });
             }
             product.size = parsedSizes;
 
-            // If new images are uploaded, update the product images
+            // Handle image upload: update images if new ones are uploaded
             if (req.files && req.files.length > 0) {
                 const imageUrls = req.files.map(file => `/uploads/products/${file.filename}`);
                 product.images = imageUrls;
             }
 
+            // Save the updated product
             await product.save();
-            res.redirect('/admin/product');
+
+            // Redirect after successful update
+            res.redirect('/admin/product'); // Or wherever you need to redirect
         } catch (error) {
             console.error('Error updating product:', error);
             res.status(500).json({ error: 'Error updating product' });
@@ -188,11 +198,16 @@ const postEditProduct = (req, res) => {
     });
 };
 
+
+
+
 // Block product by setting status to 'inactive'
 const productblock = async (req, res) => {
     try {
         const productId = req.params.id;
         const result = await Product.findByIdAndUpdate(productId, { status: 'inactive' }, { new: true });
+
+      
 
         if (result) {
             console.log("Product status updated to inactive:", result);

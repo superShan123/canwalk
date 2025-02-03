@@ -312,6 +312,20 @@
       display: block !important;
 
     }
+
+    .address-card {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.address-card.selected {
+  border-color: #007bff;
+  background-color: #f0f8ff;
+}
+
   </style>
 </head>
 
@@ -329,8 +343,9 @@
 
         <% if (addresses && addresses.length> 0) { %>
           <div class="addresses-container">
-            <% addresses.forEach((address, index)=> { %>
-              <div class="address-card <%= index === 0 ? 'active' : '' %>" onclick="selectAddress(this)">
+            <% addresses.forEach((address)=> { %>
+              <div class="address-card "  data-id="<%= address._id %>"  onclick="selectAddress(this)" tabindex="0" 
+                aria-label="Select Address">
                 <h3><strong>First Name:</strong>
                   <%= address.firstname || 'N/A' %>
                 </h3>
@@ -504,6 +519,18 @@
     </div>
 
 <script>
+
+  
+function selectAddress(element) {
+  const addressCards = document.querySelectorAll('.address-card');
+  addressCards.forEach(card => card.classList.remove('selected'));
+
+  element.classList.add('selected');
+  window.selectedAddress = element;
+
+  const selectedAddressId = element.getAttribute('data-id');
+  console.log("Selected Address ID:", selectedAddressId);
+}
 
 window.onload = function () {
   let couponCode = '';
@@ -694,16 +721,23 @@ window.onload = function () {
         return;
       }
 
-      const selectedAddress = document.querySelector('.address-card');
-      if (!selectedAddress) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Address Required',
-          text: 'Please select a delivery address.',
-          confirmButtonText: 'OK'
-        });
-        return;
-      }
+
+// Check if an address is selected
+function checkSelectedAddress() {
+  if (!selectedAddress) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Address Required',
+      text: 'Please select a delivery address.',
+      confirmButtonText: 'OK'
+    });
+    return;
+  }
+
+  // Address is selected, proceed with further actions
+  // For example, submit the order
+  console.log('Selected Address:', selectedAddress);
+}
 
       const cartItems = userCart.items.map(item => ({
         productId: item.productId._id,
@@ -724,7 +758,7 @@ window.onload = function () {
           state: selectedAddress.querySelector('h3:nth-child(6)').textContent.replace('State:', '').trim(),
         },
         paymentMethod: { method: selectedPayment.value },
-        shippingCharges: 50,
+        shippingCharges: 40,
         total: totalPrice,
         code: couponCodeInput.value || null
       };

@@ -157,6 +157,20 @@ const createOrder = async (req, res) => {
     // Save the order to the database
     const orders = await newOrder.save();
 
+    // Update product quantities
+    for (let item of items) {
+      const product = await Product.findById(item.productId);
+      if (product) {
+        if (product.quantity < item.quantity) {
+          return res.status(400).json({ success: false, message: `Not enough stock for ${product.name}` });
+        }
+
+        // Deduct the quantity from the product stock
+        product.quantity -= item.quantity;
+        await product.save();
+      }
+    }
+
     // Delete the user's cart after the order is placed
     await Cart.deleteMany({ userId });
 
@@ -181,6 +195,7 @@ const createOrder = async (req, res) => {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
+
 
 
 
@@ -267,32 +282,36 @@ const orderStatus = async (req, res) => {
 
 
 
-const getAllOrders = async (req,res)=>{
-  try{
-    const page = parseInt (req.query.page) || 1;
-    const limit = parseInt (req.query.limit) || 7;
+const getAllOrders = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 7;
+    const skip = (page - 1) * limit;
 
-    const skip = (page-1)*limit;
-
-    const orders = await Order.find().populate('userId','username').skip(skip).limit(limit);
+    // Fetch orders with sorting by createdAt descending to get the latest first
+    const orders = await Order.find()
+      .populate('userId', 'username')
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }); 
 
     const totalOrders = await Order.countDocuments();
+    const totalPages = Math.ceil(totalOrders / limit);
 
-    const totalPages = Math.ceil(totalOrders/ limit);
-
-    orders.sort((a,b)=> new Date(b.createdAt)- new Date(a.createdAt))
-    res.render('admin/order',{orders,
-      currentPage:page,
+    res.render('admin/order', {
+      orders,
+      currentPage: page,
       totalPages: totalPages,
       totalOrders: totalOrders,
-      limit: limit
-
-  })
-  }catch(err){
-    console.error('Error fetching the order',err)
-    res.status(500).send('Internal server error')
+      limit: limit,
+    });
+  } catch (err) {
+    console.error('Error fetching the order', err);
+    res.status(500).send('Internal server error');
   }
-}
+};
+
+  
 
 const updateStatus = async (req,res)=>{
   try{
@@ -309,6 +328,11 @@ const updateStatus = async (req,res)=>{
 
 const getOrderTrack = async (req, res) => {
   try {
+    const page = parseInt(req.query.page)||1;
+    const limit = parseInt(req.query.limit) || 7;
+
+    const skip =(page-1)*limit;
+
     const userId = req.session.userId;
     if (!userId) {
       return res.redirect('/login');
@@ -319,13 +343,19 @@ const getOrderTrack = async (req, res) => {
         path: 'items.productId',
         select: 'name image',
       })
-      .sort({ createdAt: -1 }); // Sort by createdAt in descending order
+      .skip(skip).limit(limit);
 
+      const totalOrders = await Order.countDocuments();
 
+      const totalPages = Math.ceil(totalOrders/ limit);
 
-    const downloadInvoiceUrl = '/download-invoice';
+      orders.sort((a,b)=> new Date(b.createdAt)- new Date(a.createdAt))
 
-    res.render('home/order-track', { orders, downloadInvoiceUrl });
+const downloadInvoiceUrl = '/download-invoice';
+
+    res.render('home/order-track', { orders, downloadInvoiceUrl, currentPage: page,
+      totalPages: totalPages, totalOrders: totalOrders, limit: limit
+     });
   } catch (err) {
     console.error('Error fetching the order:', err);
     res.status(500).send('Internal server error');

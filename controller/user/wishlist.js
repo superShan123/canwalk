@@ -1,4 +1,5 @@
-const Wishlist = require('../../models/user/wishlist')
+const Wishlist = require('../../models/user/wishlist');
+const Product = require('../../models/admin/product')
 
 
 
@@ -8,10 +9,7 @@ const wishlistAdd = async (req,res)=>{
      const {productId} = req.body;
      const userId = req.session.userId;
 
-
-
-
-     try{
+try{
         await Wishlist.updateOne(
             { userId: userId},
             {$addToSet:{productId:productId}},
@@ -64,12 +62,16 @@ const wishlist = async (req, res) => {
         return res.redirect('/login');
     }
 
-    try {
+try {
         // Find the wishlist for the user and populate productId
-        const wishlist = await Wishlist.findOne({ userId: userId }).populate('productId');
-        console.log('Fetched wishlist:', wishlist);  // Log the entire wishlist object
+        const wishlist = await Wishlist.findOne({ userId: userId }).populate({
+            path:'productId',
+            match: {status:'active'}
+        })
 
+        console.log('Fetched wishlist:', wishlist);  
 
+    
         const products = wishlist && wishlist.productId ? wishlist.productId : [];
         res.render('home/wishlist', { products });
 
@@ -86,5 +88,5 @@ const wishlist = async (req, res) => {
 module.exports = {
     wishlistAdd,
     wishlistRemove,
-    wishlist 
+    wishlist
 }

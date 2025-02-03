@@ -1,5 +1,5 @@
 const userDB = require("../../models/user/user");
-const sendOtpEmail = require("../../utils/sendOtpEmail");
+const {sendOtpEmail} = require("../../utils/sendOtpEmail");
 
 // Function to generate a 6-digit OTP
 const generateOtp = () => {
@@ -11,10 +11,12 @@ const generateOtp = () => {
 // Function to render the OTP page
 const renderOtpPage = (req, res, { success = null, error = null } = {}) => {
     const email = req.session?.tempUser?.email;
-    res.render("home/otp", { email, success, error });
+    const errors = error? [error]: []
+    console.log("Data passed to OTP page:", { email, success, errors });
+    res.render("home/otp", { email, success, errors });
 };
 
-// Function to verify OTP
+
 const verifyOtp = async (req, res) => {
     const { otp } = req.body; // Get OTP from request body
     const tempUser = req.session?.tempUser; // Get the tempUser from session
@@ -27,61 +29,51 @@ const verifyOtp = async (req, res) => {
     const sessionOtp = tempUser.otp; // Get OTP from tempUser in session
 
     // Compare the OTP as strings to ensure proper match
-    if (otp === String(sessionOtp)) {
-        const { username, email, password } = tempUser;
+    if (String(otp).trim() !== String(sessionOtp).trim()) {
+        console.log('Invalid OTP');
+        // Send error back with the countdown time to the frontend
+        return res.status(400).json({sucess: false, message:'Invalid OTP'})
+    }
 
-        // Check if all necessary fields are present
-        if (!username || !email || !password) {
-            return res.status(400).send("Incomplete user data. Please retry signup.");
-        }
+    const { username, email, password } = tempUser;
+    if (!username || !email || !password) {
+        return res.status(400).json({ success: false, message: "Incomplete user data. Please retry signup." });
+    }
 
-        const newUser = new userDB({ username, email, password });
+    const newUser = new userDB({ username, email, password });
 
-        try {
-            await newUser.save(); // Save user to database
-            console.log("User saved successfully.");
-
-            // Clear the session after saving the user
-            req.session.tempUser = null;
-
-            // Redirect to login page after successful signup
-            return res.redirect("/login");
-        } catch (error) {
-            console.error("Error saving user to database:", error);
-
-            if (error.name === 'ValidationError') {
-                return renderOtpPage(req, res, { error: "Validation error: " + error.message });
-            }
-
-            return renderOtpPage(req, res, { error: "Failed to save user." });
-        }
-    } else {
-        // OTP is incorrect
-        return renderOtpPage(req, res, { error: "Invalid OTP." });
+    try {
+        await newUser.save(); // Save user to database
+        req.session.tempUser = null;
+        return res.status(200).json({ success: true, message: "OTP verified. Signup successful. Redirecting to login..." });
+    } catch (error) {
+        console.error('Error saving user to database', error);
+        return res.status(500).json({ success: false, message: "Failed to save user. Please try again later." });
     }
 };
 
+
 // Function to resend OTP
-const resendOtp = (req, res) => {
+const resendOtp = async (req, res) => {
     const email = req.session?.tempUser?.email;
 
     if (!email) {
-        return res.redirect("/signup");
+        return res.status(400).json({ success: false, message: "No email found in session. Please retry signup." });
     }
 
     const newOtp = generateOtp();
-    req.session.tempUser.otp = newOtp;
+    req.session.tempUser.otp = newOtp; // Update the session with the new OTP
 
     try {
-        sendOtpEmail(email, newOtp);
+        await sendOtpEmail(email, newOtp);
         console.log(`New OTP sent to ${email}`);
-
-        return res.redirect('/otp');
+        return res.status(200).json({ success: true, message: "New OTP sent successfully." });
     } catch (error) {
         console.error("Error while sending OTP email:", error);
-        return renderOtpPage(req, res, { error: "Failed to resend OTP. Please try again later." });
+        return res.status(500).json({ success: false, message: "Failed to resend OTP. Please try again later." });
     }
 };
+
 
 // Export each function
 module.exports = {

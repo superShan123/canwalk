@@ -321,27 +321,98 @@
         <% } %>
 
     </div>
-
     <script>
-        function toggleCustomDateFields(value) {
-            const customDates = document.getElementById('custom-dates');
-            customDates.style.display = value === 'custom' ? 'block' : 'none';
-        }    
+      function toggleCustomDateFields(value) {
+          const customDates = document.getElementById('custom-dates');
+          if (customDates) {
+              customDates.style.display = value === 'custom' ? 'block' : 'none';
+          }
+      }
 
-        function downloadReport(format) {
-            const filter = document.getElementById('filter').value;
-            const startDate = document.getElementById('startDate') ? document.getElementById('startDate').value : '';
-            const endDate = document.getElementById('endDate') ? document.getElementById('endDate').value : '';
+      function validateDates(startDate, endDate) {
+          if (!startDate || !endDate) {
+              alert('Please select both start and end dates');
+              return false;
+          }
 
-            // Construct the download URL with query parameters
-            let downloadUrl = `/admin/download-report?filter=${filter}&format=${format}`;
-            if (startDate && endDate) {
-                downloadUrl += `&startDate=${startDate}&endDate=${endDate}`;
-            }
+          const start = new Date(startDate);
+          const end = new Date(endDate);
 
-            // Redirect to the download URL
-            window.location.href = downloadUrl;
-        }
-    </script>
+          if (end < start) {
+              alert('End date must be after start date');
+              return false;
+          }
+
+          return true;
+      }
+
+      function downloadReport(format) {
+          const filter = document.getElementById('filter').value;
+          let startDate = '';
+          let endDate = '';
+
+          if (filter === 'custom') {
+              const startDateInput = document.getElementById('startDate');
+              const endDateInput = document.getElementById('endDate');
+
+              if (!startDateInput || !endDateInput) {
+                  console.error('Date input fields not found');
+                  alert('Error: Could not find date input fields');
+                  return;
+              }
+
+              startDate = startDateInput.value;
+              endDate = endDateInput.value;
+
+              if (!validateDates(startDate, endDate)) {
+                  return;
+              }
+          }
+
+          try {
+              let downloadUrl = `/admin/download-report?filter=${filter}&format=${format}`;
+              
+              if (filter === 'custom') {
+                  downloadUrl += `&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
+              }
+
+              window.location.href = downloadUrl;
+          } catch (error) {
+              console.error('Error generating download URL:', error);
+              alert('An error occurred while trying to download the report. Please try again.');
+          }
+      }
+
+      // Initialize the page
+      document.addEventListener('DOMContentLoaded', function() {
+          // Set initial state of custom date fields based on current filter value
+          const filterSelect = document.getElementById('filter');
+          if (filterSelect) {
+              toggleCustomDateFields(filterSelect.value);
+              
+              // Add change event listener
+              filterSelect.addEventListener('change', function(event) {
+                  toggleCustomDateFields(event.target.value);
+              });
+          }
+
+          // Pre-fill date inputs with current filter dates if they exist in URL
+          const urlParams = new URLSearchParams(window.location.search);
+          const startDate = urlParams.get('startDate');
+          const endDate = urlParams.get('endDate');
+
+          if (startDate && endDate) {
+              const startDateInput = document.getElementById('startDate');
+              const endDateInput = document.getElementById('endDate');
+              
+              if (startDateInput && endDateInput) {
+                  startDateInput.value = startDate;
+                  endDateInput.value = endDate;
+              }
+          }
+      });
+  </script>
+  
+  
 </body>
 </html>

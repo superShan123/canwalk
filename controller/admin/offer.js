@@ -1,11 +1,11 @@
 const Offer = require('../../models/admin/offer')
 const Product = require('../../models/admin/product')
-
+const Category = require('../../models/admin/category')
 
 
 const createOffer = async (req,res)=>{
     try{
-        const{category,discountType,discountValue,expiryDate,applicableProducts}= req.body;
+        const{category,discountType,discountValue,expiryDate}= req.body;
         console.log('reqbody',req.body)
 
         const newOffer = new Offer({
@@ -13,14 +13,8 @@ const createOffer = async (req,res)=>{
             discountType,
             discountValue,
             expiryDate,
-            applicableProducts
         });
     
-
-         await Product.updateMany(
-            {_id:{$in:applicableProducts}},
-            {$set:{discount:parseInt(discountValue)}}
-        )
 
         newOffer.save()
          console.log('offer',newOffer)
@@ -37,8 +31,8 @@ const createOffer = async (req,res)=>{
 
 const getCreateOffer = async (req,res)=>{
    try{
-    const products = await Product.find()
-    res.render('admin/addoffer',{products})
+    const categories = await Category.find()
+    res.render('admin/addoffer',{categories})
    }catch(err){
     console.error('Error fetching the offer',err)
     res.status(500).send('Internal server error')
@@ -49,8 +43,21 @@ const getCreateOffer = async (req,res)=>{
 
 const getOffer = async (req,res)=>{
     try{
-        const offers = await Offer.find().populate('applicableProducts','name')
-        res.render('admin/offer',{offers})
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 5;
+        const skip = (page-1)*limit;
+
+        const offers = await Offer.find().populate('category').skip(skip).limit(limit).sort({ createdAt: -1 });
+
+        const totalOffers = await Offer.countDocuments() ;
+        const totalPages = Math.ceil(totalOffers/ limit);
+
+        res.render('admin/offer',{offers,
+            currentPage: page,
+            totalPages: totalPages,
+            totalOffers: totalOffers,
+            limit: limit,
+        })
         console.log('offers fetched', offers)
     }catch(err){
         console.error('Error fetching the offer')
@@ -75,10 +82,10 @@ const deleteOffer = async (req,res)=>{
 const getupdateOffer = async (req,res)=>{
     try{
         const {id} = req.params;
-        const offer = await Offer.findById(id).populate('applicableProducts');
+        const offer = await Offer.findById(id).populate('category');
         console.log('offer',offer)
-        const products = await Product.find();
-        res.render('admin/update-offer', {offer, products})
+        const categories = await Category.find();
+        res.render('admin/update-offer', {offer, categories})
 
     }catch(err){
         console.error('Error fetching offer',err)
@@ -90,13 +97,12 @@ const getupdateOffer = async (req,res)=>{
 const postupdateOffer = async (req,res)=>{
     try{
         const {id} = req.params;
-        const {category, discountType, discountValue,expiryDate, applicableProducts} = req.body;
+        const {category, discountType, discountValue,expiryDate} = req.body;
         await Offer.findByIdAndUpdate(id,{
             category,
             discountType,
             discountValue,
             expiryDate,
-            applicableProducts
         });
         res.redirect('/admin/offer')
 
@@ -105,6 +111,7 @@ const postupdateOffer = async (req,res)=>{
         res.status(500).send('Internal server error')
     }
 }
+
 
 
 

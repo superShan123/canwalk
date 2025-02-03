@@ -1,9 +1,10 @@
 const mongoose = require('mongoose')
 
 const offerSchema = new mongoose.Schema({
-    category:{
-        type:String,
-        required:true
+    category: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category',
+        required: true
     },
     discountType:{
         type:String,
@@ -19,10 +20,7 @@ const offerSchema = new mongoose.Schema({
         type:Date,
         required:true 
     },
-    applicableProducts:[{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:'Product'
-    }],
+   
 })
 
 

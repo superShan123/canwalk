@@ -7,7 +7,8 @@ const userDB = require("../../models/user/user");
 const Product = require('../../models/admin/product');
 const Category = require('../../models/admin/category');
 const {body,validationResult} = require('express-validator')
-
+const Order = require('../../models/user/order')
+const Offer = require('../../models/admin/offer')
 
 
 
@@ -65,14 +66,27 @@ const postSignup = async (req, res) => {
         if (password !== confirmPassword) {
             errors.push("Passwords do not match.");
         }
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
+
+        if (!passwordRegex.test(password)) {
+            errors.push(
+                "Password must contain at least one letter, one number, one special character, no spaces, and be at least 6 characters long."
+            );
+        }
+        
         if (password.length < 6) {
             errors.push("Password must be at least 6 characters long.");
         }
 
-        // Check if email already exists
+        
         const existingEmail = await userDB.findOne({ email });
         if (existingEmail) {
             errors.push("Email is already registered.");
+        }
+
+        const existingUsername = await userDB.findOne({username});
+        if(existingUsername){
+            errors.push('Username already exist')
         }
 
         // If errors exist, return errors as JSON
@@ -116,7 +130,8 @@ const postLogin = async (req, res) => {
         const user = await userDB.findOne({ username });
 
         if (!user) {
-            return res.redirect('/signup?message=Please sign up first');
+           
+            return res.render('home/login', { error: 'User does not exist. Please sign up.' });
         }
 
         if (user.status == "inactive") {
@@ -136,9 +151,7 @@ const postLogin = async (req, res) => {
     req.session.userId = user._id;
     console.log('Session:', req.session);
 
- 
-
-    res.redirect('/')
+ res.redirect('/')
 
     } catch (error) {
         console.error("Error during login:", error);
@@ -148,24 +161,6 @@ const postLogin = async (req, res) => {
 
 
 
-const verifyOtp = async (req, res) => {
-    try {
-        const { otp } = req.body;
-        const sessionOtp = req.session.temp.user;
-
-        if (otp === sessionOtp) {
-            const newUser = await userDB({ username, email, password });
-            newUser.save();
-           res.redirect('/login')
-           
-        } else {
-            res.render("home/otp", { error: "Invalid OTP" });
-        }
-    } catch (error) {
-        console.error("Error during OTP verification:", error);
-        res.render("home/otp", { error: "An error occurred while verifying the OTP." });
-    }
-};
 
 const getUserProducts = async (req, res) => {
     try {
@@ -184,10 +179,13 @@ const getUserProducts = async (req, res) => {
         const pageSize = 7; 
         const skip = (currentPage - 1) * pageSize 
     
-        const products = await Product.find({ status: 'active' })
-            .skip(skip)
-            .limit(pageSize)
-            .populate('category', 'name status');
+        const products = await Product.find({
+            status: 'active',
+            category: { $in: activeCategories.map(cat => cat._id) }
+        })
+        .skip(skip)
+        .limit(pageSize)
+        .populate('category', 'name status');
 
         const totalProducts = await Product.countDocuments({ status: 'active' });
         const totalPages = Math.ceil(totalProducts / pageSize);
@@ -204,10 +202,6 @@ const getUserProducts = async (req, res) => {
             }
         })
 
-        
-        
-
-        
         res.render('home/productlist', {
             products:productwithDiscount, 
             currentPage, // Pass current page number
@@ -224,39 +218,53 @@ const getUserProducts = async (req, res) => {
 const getProductDetails = async (req, res) => {
     const productId = req.params.id;
     try {
-        // Fetch all active categories
-        const activeCategories = await Category.find({ status: 'active' });
-
-        if (!activeCategories || activeCategories.length === 0) {
-           
-            return res.render('home/productlist', { products: [] });
-        }
-
-        // Extract the IDs of active categories
-        const activeCategoryIds = activeCategories.map(category => category._id);
-
         const product = await Product.findById(productId)
-        .select('name quantity price description color size status category productImages discount stock images highlights')
-        .populate('category', 'name');
-        
-       
-        if (!product) {
-            return res.status(404).send('Product not found');
-        }
-   
-        const price = product.price || 0;
-        const discount = product.discount || 0;
-        const discountedPrice = discount > 0 ? price * (1 - discount / 100) : price;
-      
-        const productImages = product.images || []; 
-        res.render('home/productdetails', { product, discountedPrice });
-    } catch (error) { 
+            .select('name quantity price description color size status productImages discount averageRating totalRatings stock images highlights category')
+            .populate('category', 'name status');
 
- 
+        if (!product || product.status === 'inactive' || product.category.status === 'inactive') {
+            return res.render('home/productdetails', { product: null, message: 'This product is currently unavailable' });
+        }
+
+        let offer = await Offer.findOne({
+            category: product.category._id,
+            expiryDate: { $gte: new Date() },
+        }) || null;
+
+        const price = product.price || 0;
+        let discountedPrice = price;
+        let appliedOffer = null;
+
+        if (offer) {
+            // Apply category offer first
+            if (offer.discountType === 'percentage') {
+                discountedPrice = price * (1 - offer.discountValue / 100);
+            } else if (offer.discountType === 'flat') {
+                discountedPrice = price - offer.discountValue;
+            }
+            appliedOffer = 'Category Offer';
+        } else if (product.discount > 0) {
+            // Apply product discount only if no category offer exists
+            discountedPrice = price * (1 - product.discount / 100);
+            appliedOffer = 'Product Discount';
+        }
+
+        res.render('home/productdetails', {
+            product,
+            discountedPrice,
+            offer,
+            appliedOffer,
+            message: '',
+        });
+
+    } catch (error) {
         console.error('Error fetching products for user:', error);
         res.status(500).render('error', { message: 'Error fetching products' });
     }
 };
+
+
+
 
 const postProductDetails = async (req, res) => {
     try {
@@ -272,6 +280,8 @@ const postProductDetails = async (req, res) => {
             images: Array.isArray(req.body.images) ? req.body.images : [req.body.images],
             category: Array.isArray(req.body.category) ? req.body.category : [req.body.category],
             status: req.body.status,
+            averageRating: req.body.averageRating,
+             totalRatings : req.body.totalRatings,
             productImages: Array.isArray(req.body.productImages) ? req.body.productImages : [req.body.productImages],
             highlights: req.body.highlights || [],
             createdAt: req.body.createdAt || new Date(),
@@ -323,7 +333,7 @@ const forgotPassword = async (req, res) => {
     try {
         const user = await userDB.findOne({ email });
         if (!user) {
-            return res.status(400).send('User not found!');
+            return res.render('home/forgot-password',{error:'User not found!'})
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000);
@@ -396,7 +406,7 @@ const otpVerify = async (req,res)=>{
             req.session.isVerified = true;
             res.redirect('/reset-password')
         }else{
-            res.status(400).send('Not matching the otp')
+            res.render('home/verify-otp',{error:'Otp is incorrect'})
         }
     }catch(err){
         console.error('Error fetching',err)
@@ -411,6 +421,82 @@ const getOtpVerify = async (req,res)=>{
 }
 
 
+
+const submitRating = async (req, res) => {
+    const { orderId, rating } = req.body;
+
+    console.log('Received orderId:', orderId);  // Log orderId
+
+    try {
+        
+
+        // Check the orderId format before the query
+        const order = await Order.findById( orderId );
+        if (!order) {
+            console.log('Order not found with orderId:', orderId);
+            return res.status(404).send('Order not found');
+        }
+
+
+        const productId = order.items[0].productId
+
+
+        // Update the order rating
+         const updatedOrder = await Order.findOneAndUpdate(
+            { _id: orderId },  
+            { $set: { "returnDetails.orderRating": parseInt(rating) } },
+            { new: true }
+        );
+
+        if (!updatedOrder) {
+            console.log('Failed to update order with orderId:', orderId);
+            return res.status(500).send('Failed to update order');
+        }
+
+        const product = await Product.findById(productId);
+
+        if(!product){
+            return res.status(404).send('Product not found')
+        }
+
+        const newTotalRatings = product.totalRatings + 1;
+        const newAverageRating = (product.averageRating * product.totalRatings + rating) / newTotalRatings
+
+       const updateProduct=  await Product.findByIdAndUpdate(productId,{
+            $set:{
+                averageRating: newAverageRating.toFixed(1),
+                totalRatings: newTotalRatings,
+            }
+        });
+
+
+
+        if(!updateProduct){
+            console.log('Failed to update product');
+            return res.status(500).send('Failed to update product')
+        }
+
+        const ratingSubmitted = true;
+
+        console.log('Updated Product Details:', updateProduct);
+        res.render('home/order-track', { ratingSubmitted, order });
+    } catch (err) {
+        console.error('Error submitting rating:', err);
+        res.status(500).send('Unable to save rating.');
+    }
+};
+
+
+const getLogout = async (req,res)=>{
+    req.session.destroy((err) => {
+        if (err) {
+            return res.status(500).send('Failed to log out');
+        }
+        res.redirect('/login')
+    });
+}
+
+
 // Exporting the controller functions
 module.exports = {
     getHome,
@@ -418,7 +504,6 @@ module.exports = {
     getLogin,
     postSignup,
     postLogin,
-    verifyOtp,
     getUserProducts,
     getProductDetails,
     postProductDetails,
@@ -429,7 +514,9 @@ module.exports = {
     getforgotPassword,
     getresetPassword,
     otpVerify,
-    getOtpVerify
+    getOtpVerify,
+    submitRating,
+    getLogout
     
 };
 

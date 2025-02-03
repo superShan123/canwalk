@@ -327,3 +327,44 @@ button a {
     border-color: white;/* Border color for success */
     font-weight: bold; /* Additional styling */
 }
+
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+/* Pagination buttons */
+.pagination-btn {
+    margin: 0 5px;
+    padding: 8px 16px;
+    background-color: #f0f0f0;
+    color: #333;
+    text-decoration: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+/* Pagination button on hover */
+.pagination-btn:hover {
+    background-color: #ddd;
+}
+
+/* Active page style */
+.pagination-btn.active {
+    background-color: #333;
+    color: #fff;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+/* Disabled button style (previous/next if at boundary) */
+.pagination-btn.disabled {
+    background-color: #f5f5f5;
+    color: #ccc;
+    pointer-events: none;
+}

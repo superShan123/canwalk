@@ -49,7 +49,7 @@ router.post('/product/toggle-status/:productId', productController.toggleProduct
 
 
 
-router.get('/logout', productController.getLogoutProduct)
+router.get('/logout',isAdminAuthenticated, productController.getLogoutProduct)
 
 router.get('/order',isAdminAuthenticated,orderController.getAllOrders)
 

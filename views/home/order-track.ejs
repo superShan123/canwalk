@@ -54,6 +54,76 @@
             td {
                 border-bottom: 1px solid #ddd;
             }
+
+            .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+/* Pagination buttons */
+.pagination-btn {
+    margin: 0 5px;
+    padding: 8px 16px;
+    background-color: #f0f0f0;
+    color: #333;
+    text-decoration: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+/* Pagination button on hover */
+.pagination-btn:hover {
+    background-color: #ddd;
+}
+
+/* Active page style */
+.pagination-btn.active {
+    background-color: #333;
+    color: #fff;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+/* Disabled button style (previous/next if at boundary) */
+.pagination-btn.disabled {
+    background-color: #f5f5f5;
+    color: #ccc;
+    pointer-events: none;
+}
+
+
+/* Ensure the radio buttons are hidden */
+input[type="radio"] {
+    display: none;
+}
+
+/* Reset the color of the label stars */
+.star-label {
+    color: #ccc; /* Grey color for unselected stars */
+}
+
+/* Hover effect for stars */
+.star-label:hover,
+.star-label:hover ~ .star-label {
+    color: #ffb400; /* Yellow color on hover */
+}
+
+/* Handle the active state of the labels when a radio button is selected */
+input[type="radio"]:checked ~ .star-label {
+    color: #ffb400; /* Yellow color for selected stars */
+}
+
+
+
+
+
+
+
+
         </style>
     </head>
     <%- include('../../partials/header') %>
@@ -172,6 +242,27 @@
                             <h1 class="text-green-600 text-2xl text-center font-sans bg-green-100 p-4 rounded">Order has been Returned</h1>
                         <% } else if (order.orderStatus === 'DELIVERED') { %>
                             <div class="order-actions">
+                                <!-- Rating Section -->
+                                <div class="rating-section">
+                                    <h3 class="text-lg font-semibold mb-2">Rate Your Order</h3>
+                                    <form method="POST" action="/submit-rating" class="mb-4">
+                                        <input type="hidden" name="orderId" value="<%= order._id %>">
+                                
+                                        <div class="flex space-x-2 mb-4">
+                                            <% for (let i = 1; i <= 5; i++) { %>
+                                                <input type="radio" id="star-<%= i %>-<%= order._id %>" name="rating" value="<%= i %>" class="hidden star-input" required />
+                                                <label for="star-<%= i %>-<%= order._id %>" class="text-gray-400 text-2xl cursor-pointer star-label">&#9733;</label>
+                                            <% } %>
+                                        </div>
+                                
+                                        <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+                                            Submit Rating
+                                        </button>
+                                    </form>
+                                </div>
+                                
+
+                            <div class="order-actions">
                                 <button class="return-order-btn" data-order-id="<%= order._id %>">Return Order</button>
                                 <div class="return-form hidden" id="return-form-<%= order._id %>">
                                     
@@ -217,9 +308,70 @@
             <% } else { %>
                 <p>No orders found for this user.</p>
             <% } %>
+
+            <div class="pagination">
+                <% if (currentPage > 1) { %>
+                    <a href="/order-tracking?page=<%= currentPage - 1 %>&limit=<%= limit %>" class="pagination-btn">Previous</a>
+                <% } else { %>
+                    <a class="pagination-btn disabled" style="pointer-events: none;">Previous</a>
+                <% } %>
+            
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <a href="/order-tracking?page=<%= i %>&limit=<%= limit %>" 
+                       class="pagination-btn <%= currentPage === i ? 'active' : '' %>">
+                       <%= i %>
+                    </a>
+                <% } %>
+            
+                <% if (currentPage < totalPages) { %>
+                    <a href="/order-tracking?page=<%= currentPage + 1 %>&limit=<%= limit %>" class="pagination-btn">Next</a>
+                <% } else { %>
+                    <a class="pagination-btn disabled" style="pointer-events: none;">Next</a>
+                <% } %>
+            </div>
         </div>
 
         <script>
+
+            // JavaScript to handle rating star selection
+document.querySelectorAll('.star-input').forEach(star => {
+    star.addEventListener('change', function() {
+        const selectedRating = this.value;
+        const labels = document.querySelectorAll('.star-label');
+        
+        labels.forEach((label, index) => {
+            if (index < selectedRating) {
+                label.style.color = '#ffb400'; // Yellow color for selected stars
+            } else {
+                label.style.color = '#ccc'; // Grey color for unselected stars
+            }
+        });
+    });
+});
+
+
+function disableRatingForm(event) {
+        // Prevent the form from submitting normally
+        event.preventDefault();
+        
+        // Disable all form inputs and button
+        const form = document.getElementById('rating-form');
+        const inputs = form.querySelectorAll('input, button');
+        
+        inputs.forEach(input => {
+            input.disabled = true;
+        });
+
+        // You can also add a confirmation message or show a loader
+        const message = document.createElement('p');
+        message.textContent = 'Thank you for your rating!';
+        message.style.color = 'green';
+        form.appendChild(message);
+
+        // If you need to submit the form data using AJAX (without refreshing the page), do so here
+        // For now, we'll just submit the form normally:
+        form.submit();
+    }
             // JavaScript to toggle the return form
             document.querySelectorAll('.return-order-btn').forEach(button => {
                 button.addEventListener('click', function () {

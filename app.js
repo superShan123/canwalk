@@ -9,7 +9,7 @@ const userRoutes = require("./routes/routes")
 const adminRoutes = require('./routes/admin')
 const upload = multer({ dest: 'uploads/' });
 const passport = require('passport')
-const initializePassport = require("./middleware/googleauth");
+// const initializePassport = require("./middleware/googleauth");
 
 
 const app = express();
@@ -17,7 +17,6 @@ const port = 8001;
 
 
 
-// Connect to MongoDB
 
 
 mongoose.connect('mongodb://localhost/canwalk')
@@ -29,6 +28,7 @@ mongoose.connect('mongodb://localhost/canwalk')
 });
 
 
+ 
 
     app.use(session({
         secret: "your-secret-key",
@@ -36,10 +36,9 @@ mongoose.connect('mongodb://localhost/canwalk')
         saveUninitialized: true,
         cookie: { secure: false } // Set to true if using HTTPS
       }));
+
+
       
-
-
-
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));

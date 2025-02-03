@@ -81,15 +81,10 @@
             background-color: #2980b9;
         }
 
-        select[multiple] {
-            height: 100px;
-        }
-
         .error {
             color: red;
             font-size: 0.9rem;
         }
-
 
     </style>
 </head>
@@ -99,9 +94,14 @@
         <form id="offerForm" action="/admin/add-offer" method="POST" novalidate>
             <div class="form-group">
                 <label>Category:</label>
-                <input type="text" id="category" name="category" required>
+                <select id="category" name="category" required>
+                    <% categories.forEach(category => { %>
+                        <option value="<%= category._id %>"><%= category.name %></option>
+                    <% }) %>
+                </select>
                 <span id="categoryError" class="error"></span>
             </div>
+
             <div class="form-group">
                 <label>Discount Type:</label>
                 <select id="discountType" name="discountType" required>
@@ -110,25 +110,19 @@
                 </select>
                 <span id="discountTypeError" class="error"></span>
             </div>
+
             <div class="form-group">
                 <label>Discount Value:</label>
                 <input type="number" id="discountValue" name="discountValue" min="0" required>
                 <span id="discountValueError" class="error"></span>
             </div>
+
             <div class="form-group">
                 <label>Expiry Date:</label>
                 <input type="date" id="expiryDate" name="expiryDate" required>
                 <span id="expiryDateError" class="error"></span>
             </div>
-            <div class="form-group">
-                <label>Applicable Products:</label>
-                <select id="applicableProducts" name="applicableProducts" multiple required>
-                    <% products.forEach(product => { %>
-                        <option value="<%= product._id %>"><%= product.name %></option>
-                    <% }) %>
-                </select>
-                <span id="applicableProductsError" class="error"></span>
-            </div>  
+
             <button type="submit">Add Offer</button>
         </form>
     </div>
@@ -137,16 +131,6 @@
         document.getElementById("offerForm").addEventListener("submit", function (event) {
             let valid = true;
 
-            // Validate Category
-            const category = document.getElementById("category").value.trim();
-            const categoryRegex = /^[A-Z][a-zA-Z0-9]*$/;
-            if (!categoryRegex.test(category)) {
-                valid = false;
-                document.getElementById("categoryError").textContent = 
-                    "Category must start with a capital letter and contain no spaces.";
-            } else {
-                document.getElementById("categoryError").textContent = "";
-            }
 
             // Validate Discount Value
             const discountValue = parseFloat(document.getElementById("discountValue").value);
@@ -169,84 +153,11 @@
                 document.getElementById("expiryDateError").textContent = "";
             }
 
-            // Validate Applicable Products
-            const applicableProducts = document.getElementById("applicableProducts").selectedOptions;
-            if (applicableProducts.length === 0) {
-                valid = false;
-                document.getElementById("applicableProductsError").textContent = 
-                    "Please select at least one product.";
-            } else {
-                document.getElementById("applicableProductsError").textContent = "";
-            }
-
             // Prevent form submission if validation fails
             if (!valid) {
                 event.preventDefault();
             }
         });
-
-        document.getElementById("offerForm").addEventListener("submit", function (event) {
-    let valid = true;
-
-    // Validate Category
-    const category = document.getElementById("category").value.trim();
-    const categoryRegex = /^[A-Z][a-zA-Z0-9]*$/;
-    if (!categoryRegex.test(category)) {
-        valid = false;
-        document.getElementById("categoryError").textContent =
-            "Category must start with a capital letter and contain no spaces.";
-    } else {
-        document.getElementById("categoryError").textContent = "";
-    }
-
-    // Validate Discount Type and Value
-    const discountType = document.getElementById("discountType").value;
-    const discountValue = parseFloat(document.getElementById("discountValue").value);
-    const maxPercentage = 100;
-    const maxFixedAmount = 10000; // Example max fixed discount
-
-    if (isNaN(discountValue) || discountValue <= 0) {
-        valid = false;
-        document.getElementById("discountValueError").textContent =
-            "Discount value must be a positive number.";
-    } else if (
-        (discountType === "percentage" && discountValue > maxPercentage) ||
-        (discountType === "fixed" && discountValue > maxFixedAmount)
-    ) {
-        valid = false;
-        document.getElementById("discountValueError").textContent =
-            `Discount value exceeds maximum allowed. For percentages, max is ${maxPercentage}%. For fixed discounts, max is ₹${maxFixedAmount}.`;
-    } else {
-        document.getElementById("discountValueError").textContent = "";
-    }
-
-    // Validate Expiry Date
-    const expiryDate = document.getElementById("expiryDate").value;
-    const currentDate = new Date().toISOString().split("T")[0];
-    if (!expiryDate || expiryDate < currentDate) {
-        valid = false;
-        document.getElementById("expiryDateError").textContent =
-            "Expiry date must be in the future.";
-    } else {
-        document.getElementById("expiryDateError").textContent = "";
-    }
-
-    // Validate Applicable Products
-    const applicableProducts = document.getElementById("applicableProducts").selectedOptions;
-    if (applicableProducts.length === 0) {
-        valid = false;
-        document.getElementById("applicableProductsError").textContent =
-            "Please select at least one product.";
-    } else {
-        document.getElementById("applicableProductsError").textContent = "";
-    }
-
-    // Prevent form submission if validation fails
-    if (!valid) {
-        event.preventDefault();
-    }
-});
-
     </script>
 </body>
 </html>

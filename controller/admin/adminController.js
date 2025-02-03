@@ -11,8 +11,9 @@ const Coupon = require('../../models/user/coupon')
 // Admin Login Get Method
 
 const getAdminLogin = (req, res) => {
-    res.render('admin/login');
+    res.render('admin/login',{error: undefined});
 };
+
 
 
 // Admin Login Post Method 
@@ -26,10 +27,10 @@ const postAdminLogin = async (req, res) => {
 
         if (username === adminUsername && password === adminPassword) {
             req.session.isAdmin = true;
-           res.redirect('/admin/customers');
+           res.redirect('/admin/dashboard');
 
         } else {
-            res.status(401).send('Incorrect username or password');
+            res.render('admin/login',{error:'Incorrect username and password'})
         }
 
     } catch (error) {
@@ -54,36 +55,21 @@ const getAdminDashboard = async (req, res) => {
         }
 
         const matchCondition = {};
-
         if (year) {
             const startOfYear = new Date(`${year}-01-01T00:00:00.000Z`);
             const endOfYear = new Date(`${year}-12-31T23:59:59.999Z`);
             matchCondition.createdAt = { $gte: startOfYear, $lte: endOfYear };
         }
 
-        if (week && year) {
-            const jan1 = new Date(`${year}-01-01T00:00:00.000Z`);
-            const dayOffset = (jan1.getDay() + 6) % 7; // Adjust for ISO week (Monday = 0)
-            const startOfWeek = new Date(jan1);
-            startOfWeek.setDate(jan1.getDate() + (week - 1) * 7 - dayOffset);
-
+        if (week) {
+            const startOfWeek = new Date(year, 0, (week - 1) * 7 + 1); // Week starts on Monday
             const endOfWeek = new Date(startOfWeek);
-            endOfWeek.setDate(startOfWeek.getDate() + 6);
-
-
-            console.log("ISO Start of Week:", startOfWeek.toISOString());
-            console.log("ISO End of Week:", endOfWeek.toISOString());
-
-            // Merge year and week conditions logically
-            matchCondition.createdAt = {
-                $gte: startOfWeek,
-                $lte: endOfWeek,
-            };
+            endOfWeek.setDate(startOfWeek.getDate() + 6); // End of the week
+            matchCondition.createdAt = { $gte: startOfWeek, $lte: endOfWeek };
         }
 
         console.log("Match Condition:", matchCondition);
 
-        // Yearly sales aggregation
         const yearlySales = await Order.aggregate([
             { $match: matchCondition },
             {
@@ -97,29 +83,120 @@ const getAdminDashboard = async (req, res) => {
 
         console.log("Yearly Sales Aggregation Result:", yearlySales);
 
-        // Fetching and processing additional stats...
+        const totalCustomers = await User.countDocuments();
+        const totalOrders = await Order.countDocuments();
+        const totalRevenue = await Order.aggregate([
+            { $group: { _id: null, totalRevenue: { $sum: "$orderSummary.total" } } },
+        ]);
+        const totalRevenueValue = totalRevenue[0]?.totalRevenue || 0;
 
-        // Send response
+        const ordersToday = await Order.countDocuments({
+            createdAt: { $gte: new Date().setHours(0, 0, 0, 0) },
+        });
+
+        const ordersThisWeek = await Order.countDocuments({
+            createdAt: {
+                $gte: new Date(new Date().setDate(new Date().getDate() - 7)), // 7 days ago
+                $lt: new Date(), // To ensure it's before the current date
+            },
+        });
+
+        console.log('orders of week', ordersThisWeek);
+
+        const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1); // First day of the month at midnight
+        const ordersThisMonth = await Order.countDocuments({
+            createdAt: {
+                $gte: startOfMonth, // Start of the current month
+                $lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59, 999), // End of the month
+            },
+        });
+
+        console.log('orders of months', ordersThisMonth);
+
+        // Fetch Best Selling Products
+
+        console.log("Before fetching best-selling products");
+        const bestSellingProducts = await Order.aggregate([
+            { $unwind: '$items' },
+            {
+                $group: {
+                    _id: '$items.productId',
+                    totalQuantity: { $sum: '$items.quantity' },
+                },
+            },
+            {
+                $lookup: {
+                    from: 'products',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'productDetails',
+                },
+            },
+            { $unwind: '$productDetails' },
+            { $sort: { totalQuantity: -1 } },
+            { $limit: 10 },
+        ]);
+
+        console.log("Best Selling Products:", bestSellingProducts); // Added log for debugging
+
+        // Fetch Best Selling Categories
+        const bestSellingCategories = await Order.aggregate([
+            { $unwind: '$items' },
+            {
+                $lookup: {
+                    from: 'products',
+                    localField: 'items.productId',
+                    foreignField: '_id',
+                    as: 'productDetails',
+                },
+            },
+            { $unwind: '$productDetails' },
+            {
+                $group: {
+                    _id: '$productDetails.category',
+                    totalSales: { $sum: '$items.quantity' },
+                },
+            },
+            {
+                $lookup: {
+                    from: 'categories',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'categoryData',
+                },
+            },
+            { $unwind: '$categoryData' },
+            { $sort: { totalSales: -1 } },
+            { $limit: 10 },
+        ]);
+
+        console.log("Best Selling Categories:", bestSellingCategories); // Added log for debugging
+
         if (req.headers.accept && req.headers.accept.includes("application/json")) {
             console.log('inside the if condition for sending the application/json');
             return res.json({
                 stats: {
-                    totalCustomers: await User.countDocuments(),
-                    totalOrders: await Order.countDocuments(),
-                    totalRevenue: (
-                        await Order.aggregate([{ $group: { _id: null, totalRevenue: { $sum: "$orderSummary.total" } } }])
-                    )[0]?.totalRevenue || 0,
+                    totalCustomers,
+                    totalOrders,
+                    totalRevenue: totalRevenueValue,
+                    ordersToday,
+                    ordersThisWeek,
+                    ordersThisMonth,
                 },
                 yearlySales,
             });
         } else {
+            console.log('this is inside the else condition');
             res.render("admin/dashboard", {
                 stats: {
-                    totalCustomers: await User.countDocuments(),
-                    totalOrders: await Order.countDocuments(),
-                    totalRevenue: (
-                        await Order.aggregate([{ $group: { _id: null, totalRevenue: { $sum: "$orderSummary.total" } } }])
-                    )[0]?.totalRevenue || 0,
+                    totalCustomers,
+                    totalOrders,
+                    totalRevenue: totalRevenueValue,
+                    ordersToday,
+                    ordersThisWeek,
+                    ordersThisMonth,
+                    bestSellingProducts: bestSellingProducts || [],
+                    bestSellingCategories: bestSellingCategories || [],
                 },
                 yearlySales,
             });

@@ -4,6 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product List</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         /* Include your existing styles here */
         
@@ -277,10 +278,38 @@ body {
     font-size: 1.2rem;
 }
 
+.breadcrumbs {
+    font-size: 0.875rem;
+    color: #64748b;
+    padding: 1rem 2rem;
+}
+
+.breadcrumb-link {
+    color: #0891b2;
+    text-decoration: none;
+}
+
+.breadcrumb-link:hover {
+    text-decoration: underline;
+}
+
+.breadcrumb-current {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+
     </style>
 </head>
 <%- include('../../partials/header') %>
 <body>
+
+    <div class="breadcrumbs">
+        <a href="/" class="breadcrumb-link">Home</a> &gt; 
+        <a href="/order" class="breadcrumb-link">Order</a> &gt; 
+        <span class="breadcrumb-current">Product </span>
+    </div>
+    
     
 
     <div class="products-container">
@@ -441,18 +470,39 @@ body {
             }
 
             const result = await response.json();
-            if(result.success){
-                icon.classList.toggle('far')
-                icon.classList.toggle('fas')
-                alert(result.message);
-                window.location.href='/wishlist'
-            }else{
-                alert('Something went wrong. Please try again.')
-            }
-        }catch(err){
-            console.error('Error',err)
-            alert('Failed to update the wishlist.')
-        }
+if(result.success){
+    icon.classList.toggle('far');
+    icon.classList.toggle('fas');
+
+    // Using SweetAlert for success
+    Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: result.message, // Your message from the result object
+        confirmButtonText: 'OK'
+    }).then(() => {
+        window.location.href = '/wishlist';
+    });
+} else {
+    // Using SweetAlert for error
+    Swal.fire({
+        icon: 'error',
+        title: 'Oops!',
+        text: 'Something went wrong. Please try again.',
+        confirmButtonText: 'OK'
+    });
+}
+} catch(err) {
+    console.error('Error', err);
+
+    // Using SweetAlert for failed request
+    Swal.fire({
+        icon: 'error',
+        title: 'Failed!',
+        text: 'Failed to update the wishlist.',
+        confirmButtonText: 'OK'
+    });
+}
 
 
                 })

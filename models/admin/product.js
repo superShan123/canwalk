@@ -17,7 +17,10 @@ const productSchema = new mongoose.Schema({
         enum: ['active', 'inactive'],       
         default: 'active',
     },              
-    highlights:{type:String},                
+    highlights:{type:String}, 
+   
+    averageRating: {type:Number, default:0} ,  
+    totalRatings: { type: Number, default: 0 },           
     size: [Number],                 
     color: { type: String }},
     

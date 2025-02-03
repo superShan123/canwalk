@@ -12,7 +12,22 @@ const MAX_PURCHASE_LIMIT = 5;
 
 const getCart = async (req, res) => {
   try {
-    const userCart = await Cart.findOne({userId: req.session.userId,}).populate("items.productId");
+   const userCart = await Cart.findOne({ userId: req.session.userId })
+      .populate({
+        path: "items.productId", // Populate product details
+        populate: { path: "category", select: "name status" }, // Populate category details
+      });
+
+      if (userCart) {
+        // Filter out items where the product or category is inactive
+        userCart.items = userCart.items.filter(
+          (item) =>
+            item.productId && 
+            item.productId.status === "active" && // Check if product is active
+            item.productId.category && 
+            item.productId.category.status === "active" // Check if category is active
+        );
+      }
   
     res.render("home/cart", { userCart });
   } catch (err) {
@@ -26,6 +41,7 @@ const addToCart = async (req, res) => {
   try {
    
     const { productId, quantity } = req.body;
+
     if (!productId) {
       return res
         .status(400)
@@ -88,21 +104,16 @@ const addToCart = async (req, res) => {
     
 
     if (existingItem) {
-      if (quantity == 1) {
-        existingItem.quantity++;
-      } else {
-        existingItem.quantity--;
-      }
+      existingItem.quantity += quantity || 1; // Ensure at least 1 is added
     } else {
-      // If product is not in the cart, add it
       cart.items.push({
         productId,
-        quantity: 1,
+        quantity: quantity || 1, // Default to 1
         discount: product.discount || 0,
-        price:product.price,
-
+        price: product.price,
       });
     }
+    
    // Save the updated cart
     await cart.save();
 
@@ -254,13 +265,46 @@ const deleteCart = async (req, res) => {
 };
 
 
+const confirmCheckout = async (req, res) => {
+  try {
+    const { addressId } = req.body; // Extract the selected address ID from the request body
+
+    // Validate if the user is logged in
+    if (!req.session.userId) {
+      return res.status(401).json({ success: false, message: 'User not logged in.' });
+    }
+
+    // Find the selected address
+    const selectedAddress = await AddressDB.findOne({
+      _id: addressId,
+      userId: req.session.userId,
+    });
+
+    // Check if the address exists and belongs to the user
+    if (!selectedAddress) {
+      return res.status(404).json({ success: false, message: 'Address not found.' });
+    }
+
+    // Save the selected address in the session for checkout processing
+    req.session.selectedAddress = selectedAddress;
+
+    // Respond with success
+    res.json({ success: true, message: 'Address selected successfully.', address: selectedAddress });
+  } catch (err) {
+    console.error('Error confirming checkout:', err);
+    res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+};
+
+
 module.exports = {
   getCart,
   addToCart,
   removeCart,
   checkoutPage,
   OrderSuccess,
-  deleteCart  
+  deleteCart ,
+  confirmCheckout 
 
 };
 

@@ -1,6 +1,7 @@
 const userDB = require("../../models/user/user");
 const AddressDB = require("../../models/user/address");
 const Wallet = require('../../models/user/wallet')
+const bcrypt = require('bcrypt')
 
 const getProfile = async (req,res)=>{
   try{
@@ -18,7 +19,6 @@ const getProfile = async (req,res)=>{
    const walletBalance = wallet ? wallet.balance:0;
     
     const {username, email} = user;
-    
 
     res.render('home/profile',{username,email,walletBalance})
   } catch(err){
@@ -91,6 +91,7 @@ const getDisplayAddress = async (req, res) => {
 
       // Fetch addresses associated with the user
       const addresses = await AddressDB.find({ userId });
+      console.log('addresesses', addresses);
 
       if(!addresses){
         return res.redirect('/address')
@@ -170,12 +171,30 @@ const postAddAddress = async(req,res)=>{
       userId
     });
     await address.save()
+    console.log(' add address',address)
+
     res.redirect('/display-address')
   }catch(err){
     console.error('Error fetching the add address', err)
     res.status(500).send('Server Error')
   }
 }
+
+
+const getPassword = async (req,res)=>{
+  try{
+    res.render('home/res-password')
+  }catch(err){
+    console.error(err)
+    res.status(500).send('Error')
+  }
+  
+}
+
+
+
+
+
 
 
 module.exports = {
@@ -187,7 +206,8 @@ module.exports = {
     postEditAddress,
     postDeleteAddress,
     getAddAddress,
-    postAddAddress
+    postAddAddress,
+    getPassword
   
 };
    

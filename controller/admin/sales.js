@@ -150,10 +150,33 @@ const downloadSalesReport = async (req, res) => {
       start = new Date(today.getFullYear(), today.getMonth(), 1);
       end = new Date();
     } else if (filter === 'custom' && startDate && endDate) {
+      // Try to parse the startDate and endDate, but don't fail completely if they are invalid
       start = new Date(startDate);
       end = new Date(endDate);
+    
+      // If the start date or end date is invalid (NaN), we try to make it valid by using the current date
+      if (isNaN(start)) {
+        start = new Date();  // Default to today if the start date is invalid
+      }
+      
+      if (isNaN(end)) {
+        end = new Date();  // Default to today if the end date is invalid
+      }
+    
+      // Ensure the end date covers the full day
       end.setHours(23, 59, 59, 999);
-    } else {
+    
+    } else if (filter === 'custom') {
+      // If no custom date range is provided, fall back to last 30 days
+      const defaultStartDate = new Date();
+      defaultStartDate.setDate(defaultStartDate.getDate() - 30); // 30 days ago
+      start = defaultStartDate;
+      end = new Date(); // Today's date
+    
+      end.setHours(23, 59, 59, 999); // Ensure the end date covers the entire day
+    }
+    
+    else {
       return res.status(400).send('Invalid filter or date range.');
     }
 

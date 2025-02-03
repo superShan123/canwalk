@@ -39,6 +39,14 @@
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
 
+            const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
+
+            if(!passwordRegex.test(data.password)){
+                errorMessage.textContent = "Password must contain at least one letter, one number, one special character, and no spaces. Minimum 6 characters.";
+            errorMessage.style.display = "block";
+            return;
+            }
+
             // Client-side validation for password match
             if (data.password !== data.confirmPassword) {
                 errorMessage.textContent = "Passwords do not match.";
