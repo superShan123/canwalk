@@ -9,7 +9,7 @@ const userRoutes = require("./routes/routes")
 const adminRoutes = require('./routes/admin')
 const upload = multer({ dest: 'uploads/' });
 const passport = require('passport')
-// const initializePassport = require("./middleware/googleauth");
+const initializePassport = require("./middleware/googleauth");
 
 
 const app = express();
@@ -19,7 +19,7 @@ const port = 8001;
 
 
 
-mongoose.connect('mongodb://localhost/canwalk')
+mongoose.connect('mongodb+srv://dBuser:shanleo10*@canwalk.zzpbp.mongodb.net/canwalk')  
 .then(() => {
     console.log('MongoDB connected...');
 })
@@ -29,8 +29,7 @@ mongoose.connect('mongodb://localhost/canwalk')
 
 
  
-
-    app.use(session({
+app.use(session({
         secret: "your-secret-key",
         resave: false,
         saveUninitialized: true,
@@ -48,6 +47,7 @@ app.use(passport.session());
 
 
   // Serve static files  
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views')); 
@@ -55,8 +55,7 @@ app.set('views', path.join(__dirname, 'views'));
 initializePassport();
 
 app.use("/",userRoutes)
-app.use('/admin',adminRoutes)
-
+app.use('/admin',adminRoutes);
 
 
 
